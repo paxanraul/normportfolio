@@ -187,22 +187,16 @@ function RevealController() {
   return null;
 }
 
-const codeFragments = [
-  ['<section>', 'far', '7%', '15%', '0s'],
-  ['display: grid;', 'near', '77%', '12%', '-4s'],
-  ['const idea = () =>', 'mid', '4%', '38%', '-8s'],
-  ['{ gap: 1.5rem; }', 'far', '79%', '35%', '-12s'],
-  ['</main>', 'near', '12%', '67%', '-3s'],
-  ['@media (hover)', 'mid', '75%', '61%', '-15s'],
-  ['transform: translateY(0);', 'far', '2%', '88%', '-10s'],
-  ['npm run build', 'near', '81%', '86%', '-6s'],
-  ['{ creative: true }', 'mid', '22%', '27%', '-18s'],
-  ['<Portfolio />', 'far', '66%', '48%', '-1s'],
-  ['--accent: #6699ff;', 'mid', '18%', '81%', '-13s'],
-  ['function create()', 'near', '72%', '73%', '-9s']
+const browserPanels = [
+  { x: '-10%', y: '7%', w: '330px', h: '215px', depth: 'far', delay: '-4s', rotate: '-5deg', variant: 'hero' },
+  { x: '79%', y: '9%', w: '350px', h: '230px', depth: 'mid', delay: '-11s', rotate: '5deg', variant: 'grid' },
+  { x: '-14%', y: '42%', w: '390px', h: '245px', depth: 'near', delay: '-17s', rotate: '4deg', variant: 'dashboard' },
+  { x: '82%', y: '45%', w: '330px', h: '220px', depth: 'far', delay: '-7s', rotate: '-6deg', variant: 'hero' },
+  { x: '4%', y: '76%', w: '300px', h: '200px', depth: 'mid', delay: '-14s', rotate: '-3deg', variant: 'grid' },
+  { x: '76%', y: '78%', w: '370px', h: '235px', depth: 'near', delay: '-2s', rotate: '4deg', variant: 'dashboard' },
 ];
 
-function CodeBackground() {
+function BrowserDepthBackground() {
   const backgroundRef = useRef(null);
   useEffect(() => {
     const onPointerMove = (event) => {
@@ -214,13 +208,26 @@ function CodeBackground() {
     window.addEventListener('pointermove', onPointerMove, { passive: true });
     return () => window.removeEventListener('pointermove', onPointerMove);
   }, []);
-  return <div className="code-background" ref={backgroundRef} aria-hidden="true">
-    <div className="code-grid" />
-    {codeFragments.map(([text, depth, left, top, delay]) => (
-      <span key={`${text}-${left}`} className={`code-fragment code-fragment--${depth}`} style={{ left, top, animationDelay: delay }}>{text}</span>
-    ))}
-    <span className="code-orbit code-orbit--one" />
-    <span className="code-orbit code-orbit--two" />
+  return <div className="browser-background" ref={backgroundRef} aria-hidden="true">
+    <div className="browser-background__glow" />
+    {browserPanels.map((panel, index) => <div
+      className={`browser-panel browser-panel--${panel.depth}`}
+      data-variant={panel.variant}
+      key={`${panel.x}-${panel.y}`}
+      style={{ left: panel.x, top: panel.y, width: panel.w, height: panel.h, '--delay': panel.delay, '--rotate': panel.rotate }}
+    >
+      <div className="browser-panel__chrome">
+        <span /><span /><span />
+        <i>raul.design/{String(index + 1).padStart(2, '0')}</i>
+      </div>
+      <div className="browser-panel__screen">
+        <span className="browser-panel__sidebar" />
+        <div className="browser-panel__content">
+          <b /><i /><i />
+          <div><span /><span /><span /></div>
+        </div>
+      </div>
+    </div>)}
   </div>;
 }
 
@@ -318,7 +325,7 @@ function App() {
   const [theme, toggleTheme] = useTheme();
   const basename = import.meta.env.BASE_URL === '/' ? undefined : import.meta.env.BASE_URL.replace(/\/$/, '');
   return <BrowserRouter basename={basename}>
-    <CodeBackground />
+    <BrowserDepthBackground />
     <Routes>
       <Route path="/" element={<Home theme={theme} toggleTheme={toggleTheme} />} />
       <Route path="/project/:slug" element={<ProjectDetail theme={theme} toggleTheme={toggleTheme} />} />
