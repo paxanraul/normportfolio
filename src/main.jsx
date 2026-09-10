@@ -3,7 +3,8 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom';
 import './styles.css';
 
-const image = (name) => `/images/${name}`;
+const asset = (path) => `${import.meta.env.BASE_URL}${path}`;
+const image = (name) => asset(`images/${name}`);
 
 const projects = [
   {
@@ -230,7 +231,7 @@ function Home({ theme, toggleTheme }) {
     <main>
       <section className="hero" aria-labelledby="hero-title">
         <div className="monogram">
-          <span className="monogram__photo"><img src="/avatar.jpeg" alt="Рауль Мамедов" width="320" height="320" /></span>
+          <span className="monogram__photo"><img src={asset('avatar.jpeg')} alt="Рауль Мамедов" width="320" height="320" /></span>
         </div>
         <p className="hero__overline">Портфолио · 2026</p>
         <h1 id="hero-title">Рауль Мамедов</h1>
@@ -315,7 +316,8 @@ function ProjectDetail({ theme, toggleTheme }) {
 
 function App() {
   const [theme, toggleTheme] = useTheme();
-  return <BrowserRouter>
+  const basename = import.meta.env.BASE_URL === '/' ? undefined : import.meta.env.BASE_URL.replace(/\/$/, '');
+  return <BrowserRouter basename={basename}>
     <CodeBackground />
     <Routes>
       <Route path="/" element={<Home theme={theme} toggleTheme={toggleTheme} />} />
