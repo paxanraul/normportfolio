@@ -4,7 +4,7 @@ import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom';
 import './styles.css';
 
 const asset = (path) => `${import.meta.env.BASE_URL}${path}`;
-const image = (name) => asset(`images/${name}`);
+const image = (name) => asset(`images/${name.replace(/\.png$/i, '.webp')}`);
 
 const projects = [
   {
@@ -141,7 +141,7 @@ function Carousel({ project, large = false }) {
     <div className="carousel__viewport">
       <div className="carousel__track" style={{ transform: `translateX(-${index * 100}%)` }}>
         {project.images.map((src, imageIndex) => <div className="carousel__slide" key={src} aria-hidden={imageIndex !== index}>
-          <img src={src} alt={`${project.name} — экран ${imageIndex + 1}`} width="1280" height="720" loading={imageIndex === 0 ? 'eager' : 'lazy'} />
+          <img src={src} alt={`${project.name} — экран ${imageIndex + 1}`} width="1280" height="720" loading={large && imageIndex === 0 ? 'eager' : 'lazy'} decoding="async" />
         </div>)}
       </div>
       <div className="carousel__wash" aria-hidden="true" />
@@ -187,47 +187,11 @@ function RevealController() {
   return null;
 }
 
-const browserPanels = [
-  { x: '-10%', y: '7%', w: '330px', h: '215px', depth: 'far', delay: '-4s', rotate: '-5deg', variant: 'hero' },
-  { x: '79%', y: '9%', w: '350px', h: '230px', depth: 'mid', delay: '-11s', rotate: '5deg', variant: 'grid' },
-  { x: '-14%', y: '42%', w: '390px', h: '245px', depth: 'near', delay: '-17s', rotate: '4deg', variant: 'dashboard' },
-  { x: '82%', y: '45%', w: '330px', h: '220px', depth: 'far', delay: '-7s', rotate: '-6deg', variant: 'hero' },
-  { x: '4%', y: '76%', w: '300px', h: '200px', depth: 'mid', delay: '-14s', rotate: '-3deg', variant: 'grid' },
-  { x: '76%', y: '78%', w: '370px', h: '235px', depth: 'near', delay: '-2s', rotate: '4deg', variant: 'dashboard' },
-];
-
-function BrowserDepthBackground() {
-  const backgroundRef = useRef(null);
-  useEffect(() => {
-    const onPointerMove = (event) => {
-      const x = event.clientX / window.innerWidth - .5;
-      const y = event.clientY / window.innerHeight - .5;
-      backgroundRef.current?.style.setProperty('--pointer-x', `${x * 18}px`);
-      backgroundRef.current?.style.setProperty('--pointer-y', `${y * 18}px`);
-    };
-    window.addEventListener('pointermove', onPointerMove, { passive: true });
-    return () => window.removeEventListener('pointermove', onPointerMove);
-  }, []);
-  return <div className="browser-background" ref={backgroundRef} aria-hidden="true">
-    <div className="browser-background__glow" />
-    {browserPanels.map((panel, index) => <div
-      className={`browser-panel browser-panel--${panel.depth}`}
-      data-variant={panel.variant}
-      key={`${panel.x}-${panel.y}`}
-      style={{ left: panel.x, top: panel.y, width: panel.w, height: panel.h, '--delay': panel.delay, '--rotate': panel.rotate }}
-    >
-      <div className="browser-panel__chrome">
-        <span /><span /><span />
-        <i>raul.design/{String(index + 1).padStart(2, '0')}</i>
-      </div>
-      <div className="browser-panel__screen">
-        <span className="browser-panel__sidebar" />
-        <div className="browser-panel__content">
-          <b /><i /><i />
-          <div><span /><span /><span /></div>
-        </div>
-      </div>
-    </div>)}
+function PixelField() {
+  return <div className="pixel-field" aria-hidden="true">
+    <span className="pixel-field__layer pixel-field__layer--one" />
+    <span className="pixel-field__layer pixel-field__layer--two" />
+    <span className="pixel-field__layer pixel-field__layer--three" />
   </div>;
 }
 
@@ -325,7 +289,7 @@ function App() {
   const [theme, toggleTheme] = useTheme();
   const basename = import.meta.env.BASE_URL === '/' ? undefined : import.meta.env.BASE_URL.replace(/\/$/, '');
   return <BrowserRouter basename={basename}>
-    <BrowserDepthBackground />
+    <PixelField />
     <Routes>
       <Route path="/" element={<Home theme={theme} toggleTheme={toggleTheme} />} />
       <Route path="/project/:slug" element={<ProjectDetail theme={theme} toggleTheme={toggleTheme} />} />
