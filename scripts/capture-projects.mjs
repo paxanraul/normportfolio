@@ -5,19 +5,25 @@ import path from 'node:path';
 
 const chromePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const outputDir = path.resolve('public/images');
+const targetSlugs = new Set(process.argv.slice(2));
+const deviceScaleFactor = 2;
+const settleDelay = Number(process.env.CAPTURE_SETTLE_MS || 2200);
+const scrollDelay = Number(process.env.CAPTURE_SCROLL_SETTLE_MS || 500);
 
 const sites = [
   { slug: 'nuit-store', name: 'NUIT', url: 'https://nuit-store.ru', positions: [0, .32, .68] },
   { slug: 'auto-prestige', name: 'Престиж Авто', url: 'https://odintsovo-auto-prestige.ru', positions: [0, .35, .75] },
   { slug: 'oymari', name: 'Oymari', url: 'https://oymari.ru', positions: [0, .42, .88] },
   { slug: 'gunay', name: 'Gunay', url: 'https://gunay-weddingsevents.ru/', positions: [0, .24, .72] },
-  { slug: 'elgun-samina', name: 'Elgun & Samina', url: 'https://www.elgunsamina.ru', positions: [0, .4, .78] },
+  {
+    slug: 'elgun-samina', name: 'Elgun & Samina', url: 'https://www.elgunsamina.ru', positions: [0, .4, .78],
+    desktopCrop: { left: 360, top: 0, width: 2160, height: 1350 },
+  },
   { slug: 'ramik-mariam', name: 'Ramik & Mariam', url: 'https://ramikmariam.ru', positions: [0, .42, .88] },
 ];
 
 async function preparePage(page, viewport) {
   await page.setViewport(viewport);
-  await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
   await page.evaluateOnNewDocument(() => {
     localStorage.setItem('theme', 'dark');
     localStorage.setItem('rm-theme', 'dark');
@@ -35,7 +41,7 @@ async function loadPage(page, url) {
     `;
     document.head.appendChild(style);
   });
-  await new Promise((resolve) => setTimeout(resolve, 2200));
+  await new Promise((resolve) => setTimeout(resolve, settleDelay));
 }
 
 async function scrollToRatio(page, ratio) {
@@ -43,7 +49,7 @@ async function scrollToRatio(page, ratio) {
     const max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
     window.scrollTo(0, max * value);
   }, ratio);
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  await new Promise((resolve) => setTimeout(resolve, scrollDelay));
 }
 
 function frameSvg(name, url, shotNumber) {
@@ -70,8 +76,11 @@ function frameSvg(name, url, shotNumber) {
 }
 
 async function compose(site, desktopBuffer, mobileBuffer, index) {
+  let desktopSource = sharp(desktopBuffer);
+  if (site.desktopCrop) desktopSource = desktopSource.extract(site.desktopCrop);
+
   const [desktop, mobile] = await Promise.all([
-    sharp(desktopBuffer).resize(928, 580, { fit: 'cover', position: 'top' }).png().toBuffer(),
+    desktopSource.resize(928, 580, { fit: 'cover', position: 'top' }).png().toBuffer(),
     sharp(mobileBuffer).resize(246, 558, { fit: 'cover', position: 'top' }).png().toBuffer(),
   ]);
 
@@ -93,12 +102,12 @@ const browser = await puppeteer.launch({
 });
 
 try {
-  for (const site of sites) {
+  for (const site of sites.filter((site) => !targetSlugs.size || targetSlugs.has(site.slug))) {
     process.stdout.write(`Capturing ${site.name}... `);
     const desktopPage = await browser.newPage();
     const mobilePage = await browser.newPage();
-    await preparePage(desktopPage, { width: 1440, height: 900, deviceScaleFactor: 1 });
-    await preparePage(mobilePage, { width: 390, height: 844, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+    await preparePage(desktopPage, { width: 1440, height: 900, deviceScaleFactor });
+    await preparePage(mobilePage, { width: 390, height: 844, deviceScaleFactor, isMobile: true, hasTouch: true });
     try {
       await Promise.all([loadPage(desktopPage, site.url), loadPage(mobilePage, site.url)]);
       for (let index = 0; index < site.positions.length; index += 1) {
